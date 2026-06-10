@@ -1,5 +1,5 @@
 import type { HttpMethod, TaskLog, TaskStatus, TriggerType } from "../shared/types";
-import type { Env } from "./env";
+import type { AppEnv } from "./env";
 import { maskHeaders, parseHeadersJson } from "./validation";
 
 type LogRow = {
@@ -71,7 +71,7 @@ function rowToLog(row: LogRow): TaskLog {
   };
 }
 
-export async function insertTaskLog(env: Env, input: InsertLogInput): Promise<void> {
+export async function insertTaskLog(env: AppEnv, input: InsertLogInput): Promise<void> {
   await env.DB.prepare(`
     INSERT INTO task_logs (
       task_id,
@@ -111,7 +111,7 @@ export async function insertTaskLog(env: Env, input: InsertLogInput): Promise<vo
   ).run();
 }
 
-export async function listTaskLogs(env: Env, taskId: number, limit: number, offset: number): Promise<TaskLog[]> {
+export async function listTaskLogs(env: AppEnv, taskId: number, limit: number, offset: number): Promise<TaskLog[]> {
   const result = await env.DB.prepare(`
     SELECT *
     FROM task_logs
@@ -123,7 +123,7 @@ export async function listTaskLogs(env: Env, taskId: number, limit: number, offs
   return result.results.map(rowToLog);
 }
 
-export async function listLogs(env: Env, filters: LogFilters, limit: number, offset: number): Promise<TaskLog[]> {
+export async function listLogs(env: AppEnv, filters: LogFilters, limit: number, offset: number): Promise<TaskLog[]> {
   const where: string[] = [];
   const binds: unknown[] = [];
 
@@ -168,7 +168,7 @@ export async function listLogs(env: Env, filters: LogFilters, limit: number, off
   return result.results.map(rowToLog);
 }
 
-export async function getLog(env: Env, id: number): Promise<TaskLog | null> {
+export async function getLog(env: AppEnv, id: number): Promise<TaskLog | null> {
   const row = await env.DB.prepare(`
     SELECT *
     FROM task_logs

@@ -5,10 +5,8 @@ export type QueueMessageBody = {
   triggerType: TriggerType;
 };
 
-export type Env = {
-  DB: D1Database;
+export type AppEnv = Env & {
   TASK_QUEUE: Queue<QueueMessageBody>;
-  ASSETS: Fetcher;
   ADMIN_TOKEN?: string;
   ENVIRONMENT?: string;
 };

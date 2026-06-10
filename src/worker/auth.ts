@@ -1,4 +1,4 @@
-import type { Env } from "./env";
+import type { AppEnv } from "./env";
 import { errorResponse } from "./http";
 
 const encoder = new TextEncoder();
@@ -16,7 +16,7 @@ export function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export function requireAuth(request: Request, env: Env): Response | null {
+export function requireAuth(request: Request, env: AppEnv): Response | null {
   if (!env.ADMIN_TOKEN) {
     return errorResponse("ADMIN_TOKEN is not configured", 500);
   }

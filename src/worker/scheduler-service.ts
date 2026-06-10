@@ -1,11 +1,11 @@
 import { LIMITS } from "../shared/constants";
-import type { Env, QueueMessageBody } from "./env";
+import type { AppEnv, QueueMessageBody } from "./env";
 
 type DueTaskRow = {
   id: number;
 };
 
-export async function scheduleDueTasks(env: Env): Promise<number> {
+export async function scheduleDueTasks(env: AppEnv): Promise<number> {
   const now = new Date().toISOString();
   const result = await env.DB.prepare(`
     SELECT id

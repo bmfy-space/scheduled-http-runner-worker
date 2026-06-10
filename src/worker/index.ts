@@ -1,4 +1,4 @@
-import type { Env } from "./env";
+import type { AppEnv } from "./env";
 import { requireAuth } from "./auth";
 import { errorResponse, getPositiveInt, jsonResponse, parsePath, readJson } from "./http";
 import { getLog, listLogs, listTaskLogs, parseLogFilters } from "./log-service";
@@ -21,7 +21,7 @@ function idFromSegment(segment: string | undefined): number | null {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
-async function handleApiRequest(request: Request, env: Env): Promise<Response> {
+async function handleApiRequest(request: Request, env: AppEnv): Promise<Response> {
   const url = new URL(request.url);
   const parts = parsePath(request);
 
@@ -133,7 +133,7 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: AppEnv): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/api/")) {
       return handleApiRequest(request, env);
@@ -142,11 +142,11 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(_event: ScheduledEvent, env: AppEnv, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(scheduleDueTasks(env));
   },
 
-  async queue(batch: MessageBatch, env: Env): Promise<void> {
+  async queue(batch: MessageBatch<unknown>, env: AppEnv): Promise<void> {
     for (const message of batch.messages) {
       try {
         const body = message.body as { taskId?: unknown; triggerType?: unknown };

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Env } from "./env";
+import type { AppEnv } from "./env";
 import { requireAuth, timingSafeEqual } from "./auth";
 
-function env(token: string | undefined): Env {
+function env(token: string | undefined): AppEnv {
   return {
     ADMIN_TOKEN: token,
     DB: {} as D1Database,

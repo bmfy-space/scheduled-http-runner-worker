@@ -1,6 +1,6 @@
 import { LIMITS } from "../shared/constants";
 import type { HttpMethod, TaskDetail, TaskStatus, TriggerType } from "../shared/types";
-import type { Env } from "./env";
+import type { AppEnv } from "./env";
 import { insertTaskLog } from "./log-service";
 import { calculateNextRunAt, getTask, recordTaskRunResult } from "./task-service";
 import { isSafeTargetUrl } from "./validation";
@@ -101,7 +101,7 @@ async function executeTask(task: TaskDetail): Promise<RunOutcome> {
   };
 }
 
-export async function runTaskById(env: Env, taskId: number, triggerType: TriggerType = "cron"): Promise<void> {
+export async function runTaskById(env: AppEnv, taskId: number, triggerType: TriggerType = "cron"): Promise<void> {
   const task = await getTask(env, taskId, false);
   if (!task) return;
   if (!task.enabled && triggerType === "cron") return;

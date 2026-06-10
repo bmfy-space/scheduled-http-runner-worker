@@ -1,6 +1,6 @@
 import { LIMITS } from "../shared/constants";
 import type { BodyType, HttpMethod, TaskDetail, TaskInput, TaskStatus, TaskSummary } from "../shared/types";
-import type { Env } from "./env";
+import type { AppEnv } from "./env";
 import { maskHeaders, parseHeadersJson } from "./validation";
 
 type TaskRow = {
@@ -69,7 +69,7 @@ function rowToDetail(row: TaskRow, maskSensitiveHeaders: boolean): TaskDetail {
   };
 }
 
-export async function listTasks(env: Env, filters: TaskFilters = {}): Promise<TaskSummary[]> {
+export async function listTasks(env: AppEnv, filters: TaskFilters = {}): Promise<TaskSummary[]> {
   const where = ["deleted_at IS NULL"];
   const binds: unknown[] = [];
 
@@ -104,7 +104,7 @@ export async function listTasks(env: Env, filters: TaskFilters = {}): Promise<Ta
   return result.results.map(rowToSummary);
 }
 
-export async function getTask(env: Env, id: number, maskSensitiveHeaders = true): Promise<TaskDetail | null> {
+export async function getTask(env: AppEnv, id: number, maskSensitiveHeaders = true): Promise<TaskDetail | null> {
   const row = await env.DB.prepare(`
     SELECT *
     FROM tasks
@@ -114,7 +114,7 @@ export async function getTask(env: Env, id: number, maskSensitiveHeaders = true)
   return row ? rowToDetail(row, maskSensitiveHeaders) : null;
 }
 
-export async function createTask(env: Env, input: TaskInput): Promise<TaskDetail> {
+export async function createTask(env: AppEnv, input: TaskInput): Promise<TaskDetail> {
   const now = new Date().toISOString();
   const nextRunAt = calculateNextRunAt(input.interval_minutes);
   const result = await env.DB.prepare(`
@@ -145,7 +145,7 @@ export async function createTask(env: Env, input: TaskInput): Promise<TaskDetail
   return created;
 }
 
-export async function updateTask(env: Env, id: number, input: TaskInput): Promise<TaskDetail | null> {
+export async function updateTask(env: AppEnv, id: number, input: TaskInput): Promise<TaskDetail | null> {
   const existing = await getTask(env, id, false);
   if (!existing) return null;
 
@@ -188,7 +188,7 @@ export async function updateTask(env: Env, id: number, input: TaskInput): Promis
   return getTask(env, id);
 }
 
-export async function softDeleteTask(env: Env, id: number): Promise<boolean> {
+export async function softDeleteTask(env: AppEnv, id: number): Promise<boolean> {
   const result = await env.DB.prepare(`
     UPDATE tasks
     SET deleted_at = ?, updated_at = ?
@@ -198,7 +198,7 @@ export async function softDeleteTask(env: Env, id: number): Promise<boolean> {
   return result.meta.changes > 0;
 }
 
-export async function setTaskEnabled(env: Env, id: number, enabled: boolean): Promise<TaskDetail | null> {
+export async function setTaskEnabled(env: AppEnv, id: number, enabled: boolean): Promise<TaskDetail | null> {
   const existing = await getTask(env, id, false);
   if (!existing) return null;
 
@@ -215,7 +215,7 @@ export async function setTaskEnabled(env: Env, id: number, enabled: boolean): Pr
 }
 
 export async function recordTaskRunResult(
-  env: Env,
+  env: AppEnv,
   id: number,
   status: TaskStatus,
   httpStatus: number | null,
