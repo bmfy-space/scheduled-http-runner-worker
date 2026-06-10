@@ -2,7 +2,7 @@ export const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"] as
 
 export const BODY_TYPES = ["raw", "json"] as const;
 
-export const TASK_STATUSES = ["success", "failed", "error", "timeout", "never_run"] as const;
+export const TASK_STATUSES = ["success", "failed", "error", "timeout", "queued", "never_run"] as const;
 
 export const TRIGGER_TYPES = ["cron", "manual", "retry"] as const;
 
