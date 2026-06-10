@@ -214,6 +214,25 @@ export async function setTaskEnabled(env: Env, id: number, enabled: boolean): Pr
   return getTask(env, id);
 }
 
+export async function recordTaskRunResult(
+  env: Env,
+  id: number,
+  status: TaskStatus,
+  httpStatus: number | null,
+  finishedAt: string,
+  nextRunAt: string
+): Promise<void> {
+  await env.DB.prepare(`
+    UPDATE tasks
+    SET last_run_at = ?,
+        last_status = ?,
+        last_http_status = ?,
+        next_run_at = ?,
+        updated_at = ?
+    WHERE id = ? AND deleted_at IS NULL
+  `).bind(finishedAt, status, httpStatus, nextRunAt, finishedAt, id).run();
+}
+
 export function parseTaskFilters(url: URL): TaskFilters {
   const enabledParam = url.searchParams.get("enabled");
   return {

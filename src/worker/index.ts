@@ -2,6 +2,8 @@ import type { Env } from "./env";
 import { requireAuth } from "./auth";
 import { errorResponse, getPositiveInt, jsonResponse, parsePath, readJson } from "./http";
 import { getLog, listLogs, listTaskLogs, parseLogFilters } from "./log-service";
+import { runTaskById } from "./runner-service";
+import { scheduleDueTasks } from "./scheduler-service";
 import {
   createTask,
   getTask,
@@ -89,6 +91,14 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
       return task ? jsonResponse(task) : errorResponse("Task not found", 404);
     }
 
+    if (request.method === "POST" && parts[3] === "run") {
+      const task = await getTask(env, taskId);
+      if (!task) return errorResponse("Task not found", 404);
+
+      await env.TASK_QUEUE.send({ taskId, triggerType: "manual" });
+      return jsonResponse({ ok: true, queued: true });
+    }
+
     if (request.method === "GET" && parts[3] === "logs") {
       const page = normalizePage(url);
       const items = await listTaskLogs(env, taskId, page.pageSize + 1, page.offset);
@@ -132,13 +142,22 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  async scheduled(_event: ScheduledEvent, _env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(Promise.resolve());
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(scheduleDueTasks(env));
   },
 
-  async queue(batch: MessageBatch, _env: Env): Promise<void> {
+  async queue(batch: MessageBatch, env: Env): Promise<void> {
     for (const message of batch.messages) {
-      message.ack();
+      try {
+        const body = message.body as { taskId?: unknown; triggerType?: unknown };
+        if (typeof body.taskId === "number" && (body.triggerType === "cron" || body.triggerType === "manual" || body.triggerType === "retry")) {
+          await runTaskById(env, body.taskId, body.triggerType);
+        }
+        message.ack();
+      } catch (error) {
+        console.error("Queue message failed", error);
+        message.retry();
+      }
     }
   }
 };
