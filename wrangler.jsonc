@@ -17,7 +17,7 @@
     {
       "binding": "DB",
       "database_name": "scheduled_http_runner",
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "909641a0-33dd-4914-9ca5-0e5075545431"
     }
   ],
   "queues": {

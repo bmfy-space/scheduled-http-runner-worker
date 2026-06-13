@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { ApiClient } from "./api";
 import { Layout, type AppRoute } from "./components/Layout";
+import { useTranslation } from "./i18n";
 import { LoginPage } from "./pages/LoginPage";
 import { LogsPage } from "./pages/LogsPage";
-import { SettingsPage } from "./pages/SettingsPage";
 import { TaskDetailPage } from "./pages/TaskDetailPage";
 import { TasksPage } from "./pages/TasksPage";
 
@@ -13,6 +13,7 @@ export function App() {
   const [taskId, setTaskId] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const api = useMemo(() => {
     if (!token) return null;
@@ -21,9 +22,9 @@ export function App() {
       setToken("");
       setRoute("tasks");
       setTaskId(null);
-      setError("登录已失效");
+      setError(t("session.expired"));
     });
-  }, [token]);
+  }, [token, t]);
 
   function login(nextToken: string) {
     sessionStorage.setItem("admin_token", nextToken);
@@ -42,7 +43,7 @@ export function App() {
     return <LoginPage onLogin={login} />;
   }
 
-  const title = route === "tasks" ? "任务管理" : route === "task-detail" ? `任务详情 #${taskId ?? ""}` : route === "logs" ? "执行日志" : "系统设置";
+  const title = route === "tasks" ? t("route.tasks") : route === "task-detail" ? `${t("route.taskDetail")}${taskId ?? ""}` : t("route.logs");
 
   return (
     <Layout
@@ -52,7 +53,6 @@ export function App() {
         setRoute(next);
         if (next !== "task-detail") setTaskId(null);
       }}
-      onRefresh={() => setRefreshKey((value) => value + 1)}
       onLogout={logout}
     >
       {error && <div className="error-banner">{error}</div>}
@@ -72,7 +72,6 @@ export function App() {
         />
       )}
       {route === "logs" && <LogsPage api={api} refreshKey={refreshKey} />}
-      {route === "settings" && <SettingsPage />}
     </Layout>
   );
 }

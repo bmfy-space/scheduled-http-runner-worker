@@ -1,6 +1,7 @@
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { isSensitiveHeaderKey } from "../../worker/validation";
+import { useTranslation } from "../i18n";
 
 type HeaderRow = {
   id: string;
@@ -25,6 +26,7 @@ function rowsToHeaders(rows: HeaderRow[]): Record<string, string> {
 export function HeaderEditor({ value, onChange }: HeaderEditorProps) {
   const [rows, setRows] = useState<HeaderRow[]>(() => toRows(value));
   const lastSerialized = useRef(JSON.stringify(value));
+  const { t } = useTranslation();
 
   useEffect(() => {
     const serialized = JSON.stringify(value);
@@ -67,12 +69,12 @@ export function HeaderEditor({ value, onChange }: HeaderEditorProps) {
               update(nextRows);
             }}
           />
-          <span className="sensitive-chip">{isSensitiveHeaderKey(row.key) ? "敏感" : ""}</span>
+          <span className="sensitive-chip">{isSensitiveHeaderKey(row.key) ? t("header.sensitive") : ""}</span>
           <button
             className="icon-button"
             type="button"
-            title="删除 Header"
-            aria-label="删除 Header"
+            title={t("header.delete")}
+            aria-label={t("header.delete")}
             onClick={() => update(rows.filter((_, candidateIndex) => candidateIndex !== index))}
           >
             <Trash2 size={16} />
@@ -80,11 +82,12 @@ export function HeaderEditor({ value, onChange }: HeaderEditorProps) {
         </div>
       ))}
       <button
-        className="button secondary small"
+        className="button secondary small add-header-button"
         type="button"
         onClick={() => update([...rows, { id: crypto.randomUUID(), key: "", value: "" }])}
       >
-        添加 Header
+        <Plus size={14} />
+        {t("header.add")}
       </button>
     </div>
   );

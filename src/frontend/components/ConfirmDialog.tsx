@@ -1,3 +1,5 @@
+import { useTranslation } from "../i18n";
+
 type ConfirmDialogProps = {
   title: string;
   body: string;
@@ -8,6 +10,7 @@ type ConfirmDialogProps = {
 };
 
 export function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel, busy = false }: ConfirmDialogProps) {
+  const { t } = useTranslation();
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onCancel}>
       <div className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -15,10 +18,10 @@ export function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel, 
         <p>{body}</p>
         <div className="dialog-actions">
           <button className="button secondary" type="button" onClick={onCancel} disabled={busy}>
-            取消
+            {t("confirm.cancel")}
           </button>
           <button className="button danger" type="button" onClick={onConfirm} disabled={busy}>
-            {busy ? "处理中" : confirmLabel}
+            {busy ? t("confirm.processing") : confirmLabel}
           </button>
         </div>
       </div>

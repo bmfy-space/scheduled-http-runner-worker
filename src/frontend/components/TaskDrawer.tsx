@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { Clock3, Power, Save, X } from "lucide-react";
 import { BODY_TYPES, DEFAULT_TASK_VALUES, HTTP_METHODS } from "../../shared/constants";
 import type { BodyType, HttpMethod, TaskDetail, TaskInput } from "../../shared/types";
+import { useTranslation } from "../i18n";
 import { HeaderEditor } from "./HeaderEditor";
 
 type TaskDrawerProps = {
@@ -30,13 +31,32 @@ export function TaskDrawer({ task, onClose, onSubmit }: TaskDrawerProps) {
   const [input, setInput] = useState<TaskInput>(() => initialInput(task));
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  const title = task ? "编辑任务" : "新建任务";
+  const { t } = useTranslation();
+  const title = task ? t("drawer.title.edit") : t("drawer.title.create");
   const bodyDisabled = input.method === "GET" || input.method === "HEAD";
+  const dirty = useMemo(() => JSON.stringify(input) !== JSON.stringify(initialInput(task)), [input, task]);
 
   useEffect(() => {
     setInput(initialInput(task));
     setFieldErrors({});
   }, [task]);
+
+  function tryClose() {
+    if (dirty && !window.confirm(t("drawer.unsavedConfirm"))) return;
+    onClose();
+  }
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        tryClose();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [dirty, input]);
 
   const jsonError = useMemo(() => {
     if (input.body_type !== "json" || !input.body) return null;
@@ -68,77 +88,92 @@ export function TaskDrawer({ task, onClose, onSubmit }: TaskDrawerProps) {
   }
 
   return (
-    <div className="drawer-backdrop" role="presentation">
+    <div className="drawer-backdrop" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) tryClose();
+    }}>
       <aside className="task-drawer" aria-label={title}>
         <div className="drawer-header">
-          <h2>{title}</h2>
-          <button className="icon-button" type="button" title="关闭" aria-label="关闭" onClick={onClose}>
+          <div>
+            <span className="drawer-kicker">{task ? `${t("drawer.kicker.edit")}${task.id}` : t("drawer.kicker.create")}</span>
+            <h2>{title}</h2>
+            <p>{t("drawer.description")}</p>
+          </div>
+          <button className="icon-button" type="button" title={t("drawer.close")} aria-label={t("drawer.close")} onClick={tryClose}>
             <X size={18} />
           </button>
         </div>
 
-        <div className="form-grid">
-          <section className="form-section">
-            <h3>基础信息</h3>
-            {fieldErrors.form && <span className="field-error">{fieldErrors.form}</span>}
-            <label>
-              Name
-              <input value={input.name} onChange={(event) => setInput({ ...input, name: event.target.value })} />
-              {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
-            </label>
-            <label>
-              Notes
-              <textarea rows={3} value={input.notes ?? ""} onChange={(event) => setInput({ ...input, notes: event.target.value })} />
-            </label>
-            <label className="switch-row">
-              <input type="checkbox" checked={input.enabled} onChange={(event) => setInput({ ...input, enabled: event.target.checked })} />
-              Enabled
-            </label>
-          </section>
-
-          <section className="form-section">
-            <h3>请求配置</h3>
-            <div className="inline-fields">
+        <div className="drawer-body">
+          <div className="drawer-main">
+            <section className="form-section">
+              <h3>{t("drawer.section.basic")}</h3>
+              {fieldErrors.form && <span className="field-error">{fieldErrors.form}</span>}
               <label>
-                Method
-                <select value={input.method} onChange={(event) => setInput({ ...input, method: event.target.value as HttpMethod })}>
-                  {HTTP_METHODS.map((method) => <option key={method}>{method}</option>)}
-                </select>
+                {t("drawer.label.name")}
+                <input placeholder={t("drawer.placeholder.name")} value={input.name} onChange={(event) => setInput({ ...input, name: event.target.value })} />
+                {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
               </label>
               <label>
-                Body Type
-                <select value={input.body_type} onChange={(event) => setInput({ ...input, body_type: event.target.value as BodyType })}>
-                  {BODY_TYPES.map((bodyType) => <option key={bodyType}>{bodyType}</option>)}
-                </select>
+                {t("drawer.label.notes")}
+                <textarea rows={3} placeholder={t("drawer.placeholder.notes")} value={input.notes ?? ""} onChange={(event) => setInput({ ...input, notes: event.target.value })} />
               </label>
-            </div>
-            <label>
-              URL
-              <input value={input.url} onChange={(event) => setInput({ ...input, url: event.target.value })} />
-              {fieldErrors.url && <span className="field-error">{fieldErrors.url}</span>}
-            </label>
-            <label>
-              Headers
-              <HeaderEditor value={input.headers} onChange={(headers) => setInput({ ...input, headers })} />
-              {fieldErrors.headers && <span className="field-error">{fieldErrors.headers}</span>}
-            </label>
-            <label>
-              Body
-              <textarea
-                rows={7}
-                value={input.body ?? ""}
-                disabled={bodyDisabled}
-                onChange={(event) => setInput({ ...input, body: event.target.value })}
-              />
-              {(fieldErrors.body || jsonError) && <span className="field-error">{fieldErrors.body ?? jsonError}</span>}
-            </label>
-          </section>
+            </section>
 
-          <section className="form-section">
-            <h3>调度配置</h3>
-            <div className="inline-fields">
+            <section className="form-section">
+              <h3>{t("drawer.section.request")}</h3>
+              <div className="inline-fields">
+                <label>
+                  {t("drawer.label.method")}
+                  <select value={input.method} onChange={(event) => setInput({ ...input, method: event.target.value as HttpMethod })}>
+                    {HTTP_METHODS.map((method) => <option key={method}>{method}</option>)}
+                  </select>
+                </label>
+                <label>
+                  {t("drawer.label.bodyType")}
+                  <select value={input.body_type} onChange={(event) => setInput({ ...input, body_type: event.target.value as BodyType })}>
+                    {BODY_TYPES.map((bodyType) => <option key={bodyType}>{bodyType}</option>)}
+                  </select>
+                </label>
+              </div>
               <label>
-                Interval Minutes
+                {t("drawer.label.url")}
+                <input placeholder={t("drawer.placeholder.url")} value={input.url} onChange={(event) => setInput({ ...input, url: event.target.value })} />
+                {fieldErrors.url && <span className="field-error">{fieldErrors.url}</span>}
+              </label>
+              <label>
+                {t("drawer.label.headers")}
+                <HeaderEditor value={input.headers} onChange={(headers) => setInput({ ...input, headers })} />
+                {fieldErrors.headers && <span className="field-error">{fieldErrors.headers}</span>}
+              </label>
+              <label>
+                {t("drawer.label.body")}
+                <textarea
+                  rows={9}
+                  placeholder={t("drawer.placeholder.body")}
+                  value={input.body ?? ""}
+                  disabled={bodyDisabled}
+                  onChange={(event) => setInput({ ...input, body: event.target.value })}
+                />
+                {bodyDisabled && <span className="field-hint">{t("drawer.hint.bodyDisabled")}</span>}
+                {(fieldErrors.body || jsonError) && <span className="field-error">{fieldErrors.body ?? jsonError}</span>}
+              </label>
+            </section>
+          </div>
+
+          <aside className="drawer-rail" aria-label={t("drawer.section.schedule.aria")}>
+            <section className="form-section sticky-section">
+              <div className="rail-heading">
+                <Clock3 size={18} />
+                <h3>{t("drawer.section.schedule")}</h3>
+              </div>
+              <label className="switch-card">
+                <span>
+                  {input.enabled ? t("drawer.schedule.enabled") : t("drawer.schedule.disabled")}
+                </span>
+                <input type="checkbox" checked={input.enabled} onChange={(event) => setInput({ ...input, enabled: event.target.checked })} />
+              </label>
+              <label>
+                {t("drawer.label.interval")}
                 <input
                   type="number"
                   min={1}
@@ -148,7 +183,7 @@ export function TaskDrawer({ task, onClose, onSubmit }: TaskDrawerProps) {
                 {fieldErrors.interval_minutes && <span className="field-error">{fieldErrors.interval_minutes}</span>}
               </label>
               <label>
-                Timeout
+                {t("drawer.label.timeout")}
                 <input
                   type="number"
                   min={1000}
@@ -160,7 +195,7 @@ export function TaskDrawer({ task, onClose, onSubmit }: TaskDrawerProps) {
                 {fieldErrors.timeout_ms && <span className="field-error">{fieldErrors.timeout_ms}</span>}
               </label>
               <label>
-                Max Retries
+                {t("drawer.label.maxRetries")}
                 <input
                   type="number"
                   min={0}
@@ -169,16 +204,23 @@ export function TaskDrawer({ task, onClose, onSubmit }: TaskDrawerProps) {
                   onChange={(event) => setInput({ ...input, max_retries: Number(event.target.value) })}
                 />
               </label>
-            </div>
-          </section>
+              <div className="run-summary">
+                <span><Power size={16} /> {t("drawer.preview.title")}</span>
+                <strong>{input.enabled ? t("drawer.preview.enabled", { minutes: input.interval_minutes || 0 }) : t("drawer.preview.disabled")}</strong>
+                <small>{t("drawer.preview.details", { timeout: input.timeout_ms || 0, retries: input.max_retries || 0 })}</small>
+              </div>
+            </section>
+          </aside>
         </div>
 
         <div className="drawer-actions">
-          <button className="button secondary" type="button" onClick={onClose} disabled={busy}>
-            取消
+          <span className={dirty ? "dirty-indicator active" : "dirty-indicator"}>{dirty ? t("drawer.dirty.active") : t("drawer.dirty.clean")}</span>
+          <button className="button secondary" type="button" onClick={tryClose} disabled={busy}>
+            {t("drawer.cancel")}
           </button>
           <button className="button primary" type="button" onClick={submit} disabled={busy}>
-            {busy ? "保存中" : "保存"}
+            <Save size={16} />
+            {busy ? t("drawer.saving") : t("drawer.save")}
           </button>
         </div>
       </aside>

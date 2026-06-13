@@ -2,7 +2,7 @@ import { LIMITS } from "../shared/constants";
 import type { HttpMethod, TaskDetail, TaskStatus, TriggerType } from "../shared/types";
 import type { AppEnv } from "./env";
 import { insertTaskLog } from "./log-service";
-import { calculateNextRunAt, getTask, recordTaskRunResult } from "./task-service";
+import { getTask, recordTaskRunResult } from "./task-service";
 import { isSafeTargetUrl } from "./validation";
 
 type RunOutcome = {
@@ -107,7 +107,6 @@ export async function runTaskById(env: AppEnv, taskId: number, triggerType: Trig
   if (!task.enabled && triggerType === "cron") return;
 
   const outcome = await executeTask(task);
-  const nextRunAt = calculateNextRunAt(task.interval_minutes);
 
   await insertTaskLog(env, {
     task_id: task.id,
@@ -127,5 +126,5 @@ export async function runTaskById(env: AppEnv, taskId: number, triggerType: Trig
     finished_at: outcome.finishedAt
   });
 
-  await recordTaskRunResult(env, task.id, outcome.status, outcome.httpStatus, outcome.finishedAt, nextRunAt);
+  await recordTaskRunResult(env, task.id, outcome.status, outcome.httpStatus, outcome.finishedAt);
 }

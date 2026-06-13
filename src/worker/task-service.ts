@@ -38,6 +38,23 @@ export function calculateNextRunAt(intervalMinutes: number, from = new Date()): 
   return new Date(from.getTime() + intervalMinutes * 60_000).toISOString();
 }
 
+export function calculateNextScheduledRunAt(intervalMinutes: number, scheduledAt: string | null, reference = new Date()): string {
+  const intervalMs = intervalMinutes * 60_000;
+  const referenceMs = reference.getTime();
+  const scheduledAtMs = scheduledAt ? Date.parse(scheduledAt) : Number.NaN;
+
+  if (!Number.isFinite(scheduledAtMs) || intervalMs <= 0) {
+    return calculateNextRunAt(intervalMinutes, reference);
+  }
+
+  let nextRunAtMs = scheduledAtMs + intervalMs;
+  while (nextRunAtMs <= referenceMs) {
+    nextRunAtMs += intervalMs;
+  }
+
+  return new Date(nextRunAtMs).toISOString();
+}
+
 function rowToSummary(row: TaskRow): TaskSummary {
   return {
     id: row.id,
@@ -219,18 +236,16 @@ export async function recordTaskRunResult(
   id: number,
   status: TaskStatus,
   httpStatus: number | null,
-  finishedAt: string,
-  nextRunAt: string
+  finishedAt: string
 ): Promise<void> {
   await env.DB.prepare(`
     UPDATE tasks
     SET last_run_at = ?,
         last_status = ?,
         last_http_status = ?,
-        next_run_at = ?,
         updated_at = ?
     WHERE id = ? AND deleted_at IS NULL
-  `).bind(finishedAt, status, httpStatus, nextRunAt, finishedAt, id).run();
+  `).bind(finishedAt, status, httpStatus, finishedAt, id).run();
 }
 
 export function parseTaskFilters(url: URL): TaskFilters {

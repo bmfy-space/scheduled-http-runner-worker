@@ -33,6 +33,12 @@ async function handleApiRequest(request: Request, env: AppEnv): Promise<Response
     return jsonResponse({ ok: true, service: "scheduled-http-runner" });
   }
 
+  if (parts[1] === "login" && request.method === "POST") {
+    const authError = requireAuth(request, env);
+    if (authError) return jsonResponse({ ok: false }, 401);
+    return jsonResponse({ ok: true });
+  }
+
   const authError = requireAuth(request, env);
   if (authError) return authError;
 
@@ -142,8 +148,8 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  async scheduled(_event: ScheduledEvent, env: AppEnv, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(scheduleDueTasks(env));
+  async scheduled(_event: ScheduledEvent, env: AppEnv, _ctx: ExecutionContext): Promise<void> {
+    await scheduleDueTasks(env);
   },
 
   async queue(batch: MessageBatch<unknown>, env: AppEnv): Promise<void> {

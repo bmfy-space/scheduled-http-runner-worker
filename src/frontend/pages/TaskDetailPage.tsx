@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { Pencil, Play, RefreshCcw, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, CalendarClock, Clipboard, Clock3, Pencil, Play, RefreshCcw, Trash2 } from "lucide-react";
 import { ApiClient, ApiError } from "../api";
 import type { TaskDetail, TaskInput, TaskLog } from "../../shared/types";
+import { useTranslation } from "../i18n";
 import { MethodBadge } from "../components/MethodBadge";
 import { StatusBadge } from "../components/StatusBadge";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -15,6 +16,29 @@ type TaskDetailPageProps = {
   onRefresh: () => void;
 };
 
+function countdown(nextRunAt: string | null) {
+  if (!nextRunAt) return "00:00:00";
+  const diff = Math.max(0, new Date(nextRunAt).getTime() - Date.now());
+  const totalSeconds = Math.floor(diff / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
+}
+
+function StatusLine() {
+  return (
+    <svg className="detail-sparkline" viewBox="0 0 180 48" aria-hidden="true">
+      <polyline points="4,36 24,29 44,24 64,26 84,22 104,14 124,18 144,25 164,11 176,7" />
+      <g>
+        {[4, 24, 44, 64, 84, 104, 124, 144, 164, 176].map((x, index) => (
+          <circle key={x} cx={x} cy={[36, 29, 24, 26, 22, 14, 18, 25, 11, 7][index]} r="2.5" />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
 export function TaskDetailPage({ api, taskId, refreshKey, onBack, onRefresh }: TaskDetailPageProps) {
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [logs, setLogs] = useState<TaskLog[]>([]);
@@ -23,6 +47,7 @@ export function TaskDetailPage({ api, taskId, refreshKey, onBack, onRefresh }: T
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   async function load() {
     setLoading(true);
@@ -38,6 +63,8 @@ export function TaskDetailPage({ api, taskId, refreshKey, onBack, onRefresh }: T
   useEffect(() => {
     void load();
   }, [taskId, refreshKey]);
+
+  const requestConfig = useMemo(() => task ? JSON.stringify({ headers: task.headers, body_type: task.body_type, body: task.body }, null, 2) : "", [task]);
 
   async function submitTask(input: TaskInput) {
     try {
@@ -66,7 +93,7 @@ export function TaskDetailPage({ api, taskId, refreshKey, onBack, onRefresh }: T
     setBusy(true);
     try {
       await api.runTask(taskId);
-      setMessage("已加入执行队列");
+      setMessage(t("detail.run.queued"));
       onRefresh();
     } finally {
       setBusy(false);
@@ -86,77 +113,116 @@ export function TaskDetailPage({ api, taskId, refreshKey, onBack, onRefresh }: T
   }
 
   if (loading || !task) {
-    return <div className="empty-state">加载中</div>;
+    return <div className="empty-state">{t("detail.loading")}</div>;
   }
 
   return (
     <div className="stack">
-      <section className="toolbar">
+      <section className="toolbar detail-actions-bar">
         <div className="toolbar-actions">
           <button className="button secondary" type="button" onClick={onBack}>
-            返回
+            <ArrowLeft size={16} />
+            {t("detail.back")}
           </button>
           <button className="button secondary" type="button" onClick={load}>
             <RefreshCcw size={16} />
-            刷新
+            {t("detail.refresh")}
           </button>
           {message && <span className="inline-message">{message}</span>}
         </div>
         <div className="toolbar-actions">
           <button className="button secondary" type="button" onClick={() => setDrawerOpen(true)}>
             <Pencil size={16} />
-            编辑
+            {t("detail.edit")}
           </button>
           <button className="button secondary" type="button" onClick={() => void toggle()} disabled={busy}>
-            {task.enabled ? "停用" : "启用"}
+            <Play size={16} />
+            {task.enabled ? t("detail.disable") : t("detail.enable")}
           </button>
           <button className="button primary" type="button" onClick={() => void run()} disabled={busy}>
             <Play size={16} />
-            立即执行
+            {t("detail.run")}
           </button>
           <button className="button danger" type="button" onClick={() => setConfirmDelete(true)}>
             <Trash2 size={16} />
-            删除
+            {t("detail.delete")}
           </button>
         </div>
       </section>
 
-      <section className="panel detail-grid">
-        <div>
+      <section className="panel detail-hero">
+        <div className="detail-identity">
           <h2>{task.name}</h2>
-          <p className="muted">{task.notes ?? "无备注"}</p>
+          <p>{task.notes ?? task.name} <span>·</span> #{task.id}</p>
           <div className="detail-meta">
             <StatusBadge status={task.last_status} />
             <MethodBadge method={task.method} />
-            <span>{task.enabled ? "启用" : "停用"}</span>
+            <span className="soft-pill">{task.enabled ? t("detail.status.enabled") : t("detail.status.disabled")}</span>
+          </div>
+          <div className="detail-kind">
+            <CalendarClock size={17} />
+            {t("detail.kind")}
           </div>
         </div>
-        <dl className="detail-list">
-          <div><dt>URL</dt><dd>{task.url}</dd></div>
-          <div><dt>Interval</dt><dd>{task.interval_minutes} min</dd></div>
-          <div><dt>Timeout</dt><dd>{task.timeout_ms} ms</dd></div>
-          <div><dt>Next Run</dt><dd>{task.next_run_at ? new Date(task.next_run_at).toLocaleString() : "-"}</dd></div>
-          <div><dt>Last Run</dt><dd>{task.last_run_at ? new Date(task.last_run_at).toLocaleString() : "-"}</dd></div>
+        <dl className="detail-list hero-list">
+          <div><dt>{t("detail.label.url")}</dt><dd>{task.url}</dd></div>
+          <div><dt>{t("detail.label.interval")}</dt><dd>{task.interval_minutes} min</dd></div>
+          <div><dt>{t("detail.label.timeout")}</dt><dd>{task.timeout_ms} ms</dd></div>
+          <div><dt>{t("detail.label.nextRun")}</dt><dd>{task.next_run_at ? new Date(task.next_run_at).toLocaleString() : "-"}</dd></div>
+          <div><dt>{t("detail.label.lastRun")}</dt><dd>{task.last_run_at ? new Date(task.last_run_at).toLocaleString() : "-"}</dd></div>
         </dl>
       </section>
 
-      <section className="panel subpanel">
-        <h3>请求配置</h3>
-        <pre className="code-block">{JSON.stringify({ headers: task.headers, body_type: task.body_type, body: task.body }, null, 2)}</pre>
+      <section className="detail-main-grid">
+        <div className="panel subpanel request-config-panel">
+          <h3>{t("detail.section.requestConfig")}</h3>
+          <div className="config-tabs">
+            <span>{t("detail.tab.method")}<strong>{task.method}</strong></span>
+            <span>{t("detail.tab.bodyType")}<strong>{task.body_type}</strong></span>
+            <button className="icon-button flat" type="button" title={t("detail.action.copyConfig")} aria-label={t("detail.action.copyConfig")} onClick={() => void navigator.clipboard?.writeText(requestConfig)}>
+              <Clipboard size={17} />
+            </button>
+          </div>
+          <pre className="code-block">{requestConfig}</pre>
+        </div>
+
+        <aside className="detail-side-stack">
+          <section className="panel subpanel runtime-panel">
+            <h3>{t("detail.section.runtime")}</h3>
+            <dl className="detail-list compact-list">
+              <div><dt>{t("detail.label.status")}</dt><dd><StatusBadge status={task.last_status} /></dd></div>
+              <div><dt>{t("detail.label.trigger")}</dt><dd>cron</dd></div>
+              <div><dt>{t("detail.label.intervalTime")}</dt><dd>{task.interval_minutes} min</dd></div>
+              <div><dt>{t("detail.label.timeoutTime")}</dt><dd>{task.timeout_ms} ms</dd></div>
+              <div><dt>{t("detail.label.successRate")}</dt><dd>{logs.length ? `${Math.round((logs.filter((log) => log.status === "success").length / logs.length) * 100)}%` : "-"}</dd></div>
+              <div><dt>{t("detail.label.lastHttpCode")}</dt><dd>{task.last_http_status ?? "-"}</dd></div>
+            </dl>
+            <StatusLine />
+          </section>
+
+          <section className="panel next-run-card">
+            <div>
+              <h3>{t("detail.section.nextRun")}</h3>
+              <p><Clock3 size={17} /> {task.next_run_at ? new Date(task.next_run_at).toLocaleString() : "-"}</p>
+            </div>
+            <strong>{countdown(task.next_run_at)}</strong>
+            <span>{t("detail.countdown.suffix")}</span>
+          </section>
+        </aside>
       </section>
 
       <section className="panel subpanel">
-        <h3>最近日志</h3>
-        {logs.length === 0 ? <div className="empty-state compact">暂无日志</div> : (
+        <h3>{t("detail.section.recentLogs")}</h3>
+        {logs.length === 0 ? <div className="empty-state compact">{t("detail.logs.empty")}</div> : (
           <table>
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Trigger</th>
-                <th>Status</th>
-                <th>HTTP</th>
-                <th>Duration</th>
-                <th>Error</th>
+                <th>{t("detail.logs.time")}</th>
+                <th>{t("detail.logs.trigger")}</th>
+                <th>{t("detail.logs.status")}</th>
+                <th>{t("detail.logs.http")}</th>
+                <th>{t("detail.logs.duration")}</th>
+                <th>{t("detail.logs.error")}</th>
               </tr>
             </thead>
             <tbody>
@@ -181,9 +247,9 @@ export function TaskDetailPage({ api, taskId, refreshKey, onBack, onRefresh }: T
 
       {confirmDelete && (
         <ConfirmDialog
-          title="删除任务"
-          body={`确认删除「${task.name}」吗？`}
-          confirmLabel="删除"
+          title={t("detail.delete.title")}
+          body={t("detail.delete.confirm", { name: task.name })}
+          confirmLabel={t("detail.delete.button")}
           onCancel={() => setConfirmDelete(false)}
           onConfirm={() => void remove()}
           busy={busy}
