@@ -143,6 +143,8 @@ export function TasksPage({ api, refreshKey, onOpenTaskDetail }: TasksPageProps)
     setBusyTaskId(task.id);
     try {
       await api.runTask(task.id);
+      setMessage(t("tasks.run.queued"));
+      setTimeout(() => setMessage(null), 3000);
     } finally {
       setBusyTaskId(null);
     }
@@ -301,7 +303,7 @@ export function TasksPage({ api, refreshKey, onOpenTaskDetail }: TasksPageProps)
                     <td>
                       <StatusBadge status={task.last_status} />
                     </td>
-                    <td>{task.last_http_status ? `HTTP ${task.last_http_status}` : "-"}</td>
+                    <td className={task.last_http_status ? (task.last_http_status < 400 ? "http-success" : "http-error") : ""}>{task.last_http_status ? `HTTP ${task.last_http_status}` : "-"}</td>
                     <td>{task.last_run_at ? new Date(task.last_run_at).toLocaleString() : t("tasks.lastRun.never")}</td>
                     <td>{task.next_run_at ? new Date(task.next_run_at).toLocaleString() : "-"}</td>
                     <td>

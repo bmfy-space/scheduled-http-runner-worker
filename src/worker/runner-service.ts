@@ -79,7 +79,7 @@ async function executeTask(task: TaskDetail): Promise<RunOutcome> {
     httpStatus = response.status;
     responseHeaders = Object.fromEntries(response.headers.entries());
     responseBodyPreview = await readResponsePreview(response);
-    if (!response.ok) status = "failed";
+    if (response.status >= 400) status = "failed";
   } catch (error) {
     const err = error as Error;
     status = err.name === "AbortError" ? "timeout" : "error";

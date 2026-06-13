@@ -4,6 +4,7 @@ import { BODY_TYPES, DEFAULT_TASK_VALUES, HTTP_METHODS } from "../../shared/cons
 import type { BodyType, HttpMethod, TaskDetail, TaskInput } from "../../shared/types";
 import { useTranslation } from "../i18n";
 import { HeaderEditor } from "./HeaderEditor";
+import { CurlImportButton } from "./CurlImportButton";
 
 type TaskDrawerProps = {
   task: TaskDetail | null;
@@ -57,6 +58,17 @@ export function TaskDrawer({ task, onClose, onSubmit }: TaskDrawerProps) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [dirty, input]);
+
+  function handleCurlImport(parsed: Partial<TaskInput>) {
+    setInput((prev) => ({
+      ...prev,
+      url: parsed.url ?? prev.url,
+      method: parsed.method ?? prev.method,
+      headers: parsed.headers ?? prev.headers,
+      body: parsed.body ?? prev.body,
+      body_type: parsed.body_type ?? prev.body_type,
+    }));
+  }
 
   const jsonError = useMemo(() => {
     if (input.body_type !== "json" || !input.body) return null;
@@ -120,7 +132,10 @@ export function TaskDrawer({ task, onClose, onSubmit }: TaskDrawerProps) {
             </section>
 
             <section className="form-section">
-              <h3>{t("drawer.section.request")}</h3>
+              <div className="curl-import-row">
+                <h3>{t("drawer.section.request")}</h3>
+                <CurlImportButton onImport={handleCurlImport} />
+              </div>
               <div className="inline-fields">
                 <label>
                   {t("drawer.label.method")}

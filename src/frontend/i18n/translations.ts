@@ -91,6 +91,7 @@ const zh: TranslationKeys = {
   "tasks.action.editAria": "编辑任务",
   "tasks.action.run": "立即运行",
   "tasks.action.runAria": "立即运行任务",
+  "tasks.run.queued": "已加入执行队列",
   "tasks.action.delete": "删除",
   "tasks.action.deleteAria": "删除任务",
   "tasks.pagination.prev": "上一页",
@@ -181,6 +182,16 @@ const zh: TranslationKeys = {
   "drawer.cancel": "取消",
   "drawer.saving": "保存中",
   "drawer.save": "保存",
+
+  // Curl import
+  "curlImport.button": "导入 cURL",
+  "curlImport.kicker": "Import",
+  "curlImport.title": "导入 cURL 命令",
+  "curlImport.close": "关闭",
+  "curlImport.placeholder": "粘贴 curl 命令...\n\ncurl -X POST https://api.example.com/data \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"key\": \"value\"}'",
+  "curlImport.cancel": "取消",
+  "curlImport.import": "解析并导入",
+  "curlImport.error.parse": "解析失败，请检查 curl 命令格式",
 
   // Confirm dialog
   "confirm.cancel": "取消",
@@ -333,6 +344,7 @@ const en: TranslationKeys = {
   "tasks.action.editAria": "Edit task",
   "tasks.action.run": "Run",
   "tasks.action.runAria": "Run task now",
+  "tasks.run.queued": "Queued for execution",
   "tasks.action.delete": "Delete",
   "tasks.action.deleteAria": "Delete task",
   "tasks.pagination.prev": "Previous page",
@@ -423,6 +435,16 @@ const en: TranslationKeys = {
   "drawer.cancel": "Cancel",
   "drawer.saving": "Saving",
   "drawer.save": "Save",
+
+  // Curl import
+  "curlImport.button": "Import cURL",
+  "curlImport.kicker": "Import",
+  "curlImport.title": "Import cURL Command",
+  "curlImport.close": "Close",
+  "curlImport.placeholder": "Paste a curl command...\n\ncurl -X POST https://api.example.com/data \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"key\": \"value\"}'",
+  "curlImport.cancel": "Cancel",
+  "curlImport.import": "Parse & Import",
+  "curlImport.error.parse": "Failed to parse, please check the curl command format",
 
   // Confirm dialog
   "confirm.cancel": "Cancel",

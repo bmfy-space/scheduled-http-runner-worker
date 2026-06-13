@@ -947,7 +947,7 @@ tbody tr:last-child td {
 }
 
 .switch-inline input:checked + span {
-  background: #cfd5dd;
+  background: var(--green);
 }
 
 .switch-inline input:checked + span::after {
@@ -1321,8 +1321,13 @@ tbody tr:last-child td {
   font-size: 14px;
 }
 
-.http-ok {
+.http-success {
   color: var(--green-dark);
+  font-weight: 750;
+}
+
+.http-error {
+  color: var(--red);
   font-weight: 750;
 }
 
@@ -1664,6 +1669,45 @@ tbody tr:last-child td {
 
 .confirm-dialog p {
   color: #4b5563;
+}
+
+.curl-import-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.curl-import-modal {
+  width: min(520px, calc(100vw - 36px));
+  max-height: calc(100vh - 64px);
+  overflow: auto;
+  display: grid;
+  gap: 16px;
+  padding: 26px;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 12px;
+  box-shadow: var(--shadow-modal);
+}
+
+.curl-input {
+  width: 100%;
+  min-height: 160px;
+  padding: 14px;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.curl-import-error {
+  padding: 10px 14px;
+  color: #b42318;
+  background: #fff1f1;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .login-page {

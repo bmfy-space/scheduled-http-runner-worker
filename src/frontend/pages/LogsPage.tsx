@@ -223,7 +223,7 @@ export function LogsPage({ api, refreshKey }: LogsPageProps) {
                       <StatusBadge status={log.status} />
                     </td>
                     <td>{log.duration_ms !== null ? `${log.duration_ms} ms` : "-"}</td>
-                    <td className={log.http_status && log.http_status < 400 ? "http-ok" : ""}>{log.http_status ?? "-"}</td>
+                    <td className={log.http_status ? (log.http_status < 400 ? "http-success" : "http-error") : ""}>{log.http_status ?? "-"}</td>
                     <td className="truncate">{log.error_message ?? "-"}</td>
                     <td>
                       <div className="row-actions">
